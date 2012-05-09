@@ -16,6 +16,7 @@
 #include "../mwworld/refdata.hpp"
 #include "../mwworld/player.hpp"
 #include "../mwworld/containerstore.hpp"
+#include "../mwworld/outputtranslator.hpp"
 
 #include "../mwinput/inputmanager.hpp"
 #include "../mwgui/dialogue.hpp"
@@ -664,7 +665,7 @@ namespace MWDialogue
 
                         std::string text = iter->response;
                         parseText(text);
-                        win->addText(iter->response);
+                        win->addText(MWWorld::OutputTranslator::translateOutputText(mActor, iter->response));
                         executeScript(iter->resultScript);
                         greetingFound = true;
                         mLastTopic = it->first;
@@ -795,7 +796,7 @@ namespace MWDialogue
 
                             MWGui::DialogueWindow* win = MWBase::Environment::get().getWindowManager()->getDialogueWindow();
                             win->addTitle(keyword);
-                            win->addText(iter->response);
+                            win->addText(MWWorld::OutputTranslator::translateOutputText(mActor, iter->response));
 
                             executeScript(script);
 
@@ -839,7 +840,7 @@ namespace MWDialogue
                             MWGui::DialogueWindow* win = MWBase::Environment::get().getWindowManager()->getDialogueWindow();
                             std::string text = iter->response;
                             parseText(text);
-                            win->addText(text);
+                            win->addText(MWWorld::OutputTranslator::translateOutputText(mActor, text));
                             executeScript(iter->resultScript);
                             mLastTopic = mLastTopic;
                             mLastDialogue = *iter;

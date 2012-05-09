@@ -1,4 +1,5 @@
 #include "imagerotate.hpp"
+#include "../OgreMaterialManager.h"
 
 #include <OgreRoot.h>
 #include <OgreSceneManager.h>
@@ -19,7 +20,7 @@ void ImageRotate::rotate(const std::string& sourceImage, const std::string& dest
     SceneManager* sceneMgr = root->createSceneManager(ST_GENERIC);
     Camera* camera = sceneMgr->createCamera("ImageRotateCamera");
 
-    MaterialPtr material = MaterialManager::getSingleton().create("ImageRotateMaterial", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+    MaterialPtr material = MaterialManager::getSingletonPtr()->create("ImageRotateMaterial", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
     material->getTechnique(0)->getPass(0)->setLightingEnabled(false);
     material->getTechnique(0)->getPass(0)->setDepthCheckEnabled(false);
     TextureUnitState* tus = material->getTechnique(0)->getPass(0)->createTextureUnitState(sourceImage);

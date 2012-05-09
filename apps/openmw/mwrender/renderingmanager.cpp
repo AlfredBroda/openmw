@@ -346,7 +346,7 @@ void RenderingManager::configureFog(const float density, const Ogre::ColourValue
     CompositorInstance* inst = CompositorManager::getSingleton().getCompositorChain(mRendering.getViewport())->getCompositor("gbuffer");
     if (inst != 0)
         inst->getCompositor()->getTechnique(0)->getTargetPass(0)->getPass(0)->setClearColour(colour);
-    if (mWater)
+        if (mWater)
         mWater->setViewportBackground(colour);
 }
 
