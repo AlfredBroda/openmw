@@ -884,4 +884,11 @@ namespace MWDialogue
         }
         return factionID;
     }
+
+    void DialogueManager::goodbye()
+    {
+        MWGui::DialogueWindow* win = MWBase::Environment::get().getWindowManager()->getDialogueWindow();
+
+        win->goodbye();
+    }
 }

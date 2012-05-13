@@ -60,6 +60,10 @@ StatsWindow::StatsWindow (WindowManager& parWindowManager)
     getWidget(skillAreaWidget, "Skills");
     getWidget(skillClientWidget, "SkillClient");
     getWidget(skillScrollerWidget, "SkillScroller");
+    getWidget(mLeftPane, "LeftPane");
+    getWidget(mRightPane, "RightPane");
+
+    skillClientWidget->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
 
     skillScrollerWidget->eventScrollChangePosition += MyGUI::newDelegate(this, &StatsWindow::onScrollChangePosition);
     updateScroller();
@@ -91,8 +95,22 @@ void StatsWindow::onScrollChangePosition(MyGUI::ScrollBar* scroller, size_t pos)
     }
 }
 
+void StatsWindow::onMouseWheel(MyGUI::Widget* _sender, int _rel)
+{
+    if (skillScrollerWidget->getScrollPosition() - _rel*0.3 < 0)
+        skillScrollerWidget->setScrollPosition(0);
+    else if (skillScrollerWidget->getScrollPosition() - _rel*0.3 > skillScrollerWidget->getScrollRange()-1)
+        skillScrollerWidget->setScrollPosition(skillScrollerWidget->getScrollRange()-1);
+    else
+        skillScrollerWidget->setScrollPosition(skillScrollerWidget->getScrollPosition() - _rel*0.3);
+
+    onScrollChangePosition(skillScrollerWidget, skillScrollerWidget->getScrollPosition());
+}
+
 void StatsWindow::onWindowResize(MyGUI::Window* window)
 {
+    mLeftPane->setCoord( MyGUI::IntCoord(0, 0, 0.44*window->getSize().width, window->getSize().height) );
+    mRightPane->setCoord( MyGUI::IntCoord(0.44*window->getSize().width, 0, 0.56*window->getSize().width, window->getSize().height) );
     updateScroller();
 }
 
@@ -230,7 +248,10 @@ void StatsWindow::setBirthSign (const std::string& signId)
 
 void StatsWindow::addSeparator(MyGUI::IntCoord &coord1, MyGUI::IntCoord &coord2)
 {
-    MyGUI::ImageBox* separator = skillClientWidget->createWidget<MyGUI::ImageBox>("MW_HLine", MyGUI::IntCoord(10, coord1.top, coord1.width + coord2.width - 4, 18), MyGUI::Align::Default);
+    MyGUI::ImageBox* separator = skillClientWidget->createWidget<MyGUI::ImageBox>("MW_HLine",
+        MyGUI::IntCoord(10, coord1.top, coord1.width + coord2.width - 4, 18),
+        MyGUI::Align::Left | MyGUI::Align::Top | MyGUI::Align::HStretch);
+    separator->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
     skillWidgets.push_back(separator);
 
     coord1.top += separator->getHeight();
@@ -239,8 +260,11 @@ void StatsWindow::addSeparator(MyGUI::IntCoord &coord1, MyGUI::IntCoord &coord2)
 
 void StatsWindow::addGroup(const std::string &label, MyGUI::IntCoord &coord1, MyGUI::IntCoord &coord2)
 {
-    MyGUI::TextBox* groupWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandBrightText", MyGUI::IntCoord(0, coord1.top, coord1.width + coord2.width, coord1.height), MyGUI::Align::Default);
+    MyGUI::TextBox* groupWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandBrightText",
+        MyGUI::IntCoord(0, coord1.top, coord1.width + coord2.width, coord1.height),
+        MyGUI::Align::Left | MyGUI::Align::Top | MyGUI::Align::HStretch);
     groupWidget->setCaption(label);
+    groupWidget->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
     skillWidgets.push_back(groupWidget);
 
     coord1.top += lineHeight;
@@ -251,16 +275,18 @@ MyGUI::TextBox* StatsWindow::addValueItem(const std::string& text, const std::st
 {
     MyGUI::TextBox *skillNameWidget, *skillValueWidget;
 
-    skillNameWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandText", coord1, MyGUI::Align::Default);
+    skillNameWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandText", coord1, MyGUI::Align::Left | MyGUI::Align::Top | MyGUI::Align::HStretch);
     skillNameWidget->setCaption(text);
     skillNameWidget->setUserString("ToolTipType", "Text");
     skillNameWidget->setUserString("ToolTipText", tooltip);
+    skillNameWidget->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
 
-    skillValueWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandTextRight", coord2, MyGUI::Align::Default);
+    skillValueWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandTextRight", coord2, MyGUI::Align::Right | MyGUI::Align::Top);
     skillValueWidget->setUserString("ToolTipType", "Text");
     skillValueWidget->setUserString("ToolTipText", tooltip);
     skillValueWidget->setCaption(value);
     skillValueWidget->_setWidgetState(state);
+    skillValueWidget->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
 
     skillWidgets.push_back(skillNameWidget);
     skillWidgets.push_back(skillValueWidget);
@@ -277,6 +303,7 @@ void StatsWindow::addItem(const std::string text, MyGUI::IntCoord &coord1, MyGUI
 
     skillNameWidget = skillClientWidget->createWidget<MyGUI::TextBox>("SandText", coord1 + MyGUI::IntSize(coord2.width, 0), MyGUI::Align::Default);
     skillNameWidget->setCaption(text);
+    skillNameWidget->eventMouseWheel += MyGUI::newDelegate(this, &StatsWindow::onMouseWheel);
 
     skillWidgets.push_back(skillNameWidget);
 
@@ -362,7 +389,7 @@ void StatsWindow::updateSkillArea()
         if (!skillWidgets.empty())
             addSeparator(coord1, coord2);
 
-        addGroup(mWindowManager.getGameSettingString("sSign", "Sign"), coord1, coord2);
+        addGroup(mWindowManager.getGameSettingString("sBirthSign", "Sign"), coord1, coord2);
         const ESM::BirthSign *sign = store.birthSigns.find(birthSignId);
         addItem(sign->name, coord1, coord2);
     }
@@ -386,6 +413,8 @@ void StatsWindow::updateScroller()
 {
     skillScrollerWidget->setScrollRange(std::max(clientHeight - skillClientWidget->getHeight(), 0));
     skillScrollerWidget->setScrollPage(std::max(skillClientWidget->getHeight() - lineHeight, 0));
+    if (clientHeight != 0)
+        skillScrollerWidget->setTrackSize( (skillAreaWidget->getHeight() / float(clientHeight)) * skillScrollerWidget->getLineSize() );
 }
 
 void StatsWindow::onPinToggled()
